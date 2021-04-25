@@ -4,6 +4,7 @@ const ImageCard = ({ image }) => {
   return (
     <div className="max-w-sm rounded overflow-hidden shadow-lg">
       <img
+        className="object-cover h-48 w-full"
         src={"http://localhost:8080/image/download/" + image.imageId}
         alt=""
       />
