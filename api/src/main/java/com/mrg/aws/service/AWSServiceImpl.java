@@ -43,18 +43,15 @@ public class AWSServiceImpl implements AWSService {
     public AWSServiceImpl(S3Client s3Client, DynamoDbClient dynamoDbClient) {
         this.s3Client = s3Client;
         this.dynamoDbClient = dynamoDbClient;
-        this.enhancedClient = DynamoDbEnhancedClient.builder()
-                .dynamoDbClient(dynamoDbClient)
-                .build();
+        this.enhancedClient = DynamoDbEnhancedClient.builder().dynamoDbClient(dynamoDbClient).build();
     }
-
 
     @Override
     public List<Image> findAll() {
         List<Image> imageList = new ArrayList<>();
         try {
             // Create a DynamoDbTable object
-            DynamoDbTable<Image> imageTable = enhancedClient.table(tableName,TableSchema.fromBean(Image.class));
+            DynamoDbTable<Image> imageTable = enhancedClient.table(tableName, TableSchema.fromBean(Image.class));
             imageTable.scan().items().forEach(imageList::add);
             return imageList;
 
@@ -68,19 +65,13 @@ public class AWSServiceImpl implements AWSService {
     public List<Image> findBySearchTerm(String searchTerm) {
         List<Image> imageList = new ArrayList<>();
         try {
-            DynamoDbTable<Image> imageTable = enhancedClient.table(tableName,TableSchema.fromBean(Image.class));
-            AttributeValue attr = AttributeValue.builder()
-                    .s(searchTerm)
-                    .build();
+            DynamoDbTable<Image> imageTable = enhancedClient.table(tableName, TableSchema.fromBean(Image.class));
+            AttributeValue attr = AttributeValue.builder().s(searchTerm).build();
             Map<String, AttributeValue> myMap = new HashMap<>();
             myMap.put(":tag", attr);
-            Expression expression = Expression.builder()
-                    .expressionValues(myMap)
-                    .expression("contains(Tags, :tag)")
+            Expression expression = Expression.builder().expressionValues(myMap).expression("contains(Tags, :tag)")
                     .build();
-            ScanEnhancedRequest enhancedRequest = ScanEnhancedRequest.builder()
-                    .filterExpression(expression)
-                    .build();
+            ScanEnhancedRequest enhancedRequest = ScanEnhancedRequest.builder().filterExpression(expression).build();
             imageTable.scan(enhancedRequest).items().forEach(imageList::add);
             return imageList;
 
@@ -93,11 +84,10 @@ public class AWSServiceImpl implements AWSService {
     @Override
     public byte[] downloadImage(UUID uniqueFileId) {
         try {
-            GetObjectRequest getObjectRequest = GetObjectRequest.builder()
-                    .bucket(bucketName)
-                    .key(uniqueFileId.toString())
-                    .build();
-            ResponseBytes<GetObjectResponse> result = s3Client.getObject(getObjectRequest, ResponseTransformer.toBytes());
+            GetObjectRequest getObjectRequest = GetObjectRequest.builder().bucket(bucketName)
+                    .key(uniqueFileId.toString()).build();
+            ResponseBytes<GetObjectResponse> result = s3Client.getObject(getObjectRequest,
+                    ResponseTransformer.toBytes());
             // to get the bytes
             return result.asByteArray();
 
@@ -107,7 +97,8 @@ public class AWSServiceImpl implements AWSService {
     }
 
     @Override
-    public void uploadImage(final MultipartFile multipartFile, final String description, final String tags) throws Exception {
+    public void uploadImage(final MultipartFile multipartFile, final String description, final String tags)
+            throws Exception {
         if (FileUtils.isFileNotEmpty(multipartFile)) {
             LOGGER.info("File upload in progress.");
             // Primary key for S3 & DynamoDB records
@@ -120,12 +111,10 @@ public class AWSServiceImpl implements AWSService {
         }
     }
 
-
     private void addFileToDynamoDBTable(String uniqueId, MultipartFile multipartFile, String description, String tags) {
         try {
             LOGGER.info("Adding DynamoDB record with name= " + uniqueId);
-            DynamoDbTable<Image> imageTable = enhancedClient.table(tableName,
-                    TableSchema.fromBean(Image.class));
+            DynamoDbTable<Image> imageTable = enhancedClient.table(tableName, TableSchema.fromBean(Image.class));
             Image image = new Image();
             image.setImageId(uniqueId);
             image.setFileName(multipartFile.getOriginalFilename());
@@ -147,10 +136,7 @@ public class AWSServiceImpl implements AWSService {
         LOGGER.info("Uploading file with name= " + uniqueFileId);
         final File file = FileUtils.convertMultiPartFileToFile(multipartFile);
         try {
-            PutObjectRequest objectRequest = PutObjectRequest.builder()
-                    .bucket(bucketName)
-                    .key(uniqueFileId)
-                    .build();
+            PutObjectRequest objectRequest = PutObjectRequest.builder().bucket(bucketName).key(uniqueFileId).build();
             s3Client.putObject(objectRequest, RequestBody.fromFile(file));
             LOGGER.info("File upload S3 is completed.");
 
@@ -164,26 +150,20 @@ public class AWSServiceImpl implements AWSService {
         }
     }
 
-
     /*
-     * TR : S3 operasyonu başarısız olursa mantıksal veri bütünlüğünü korumak
-     *      adına ilgili DynamoDB kaydı silinmeli/geri alınmalı.
-     * -------------------------------------------------------------------------------
-     * EN : If S3 operation fails ensures the remaining DynamoDB record is rolled back
-     *      for logical data consistency.
-     * */
+     * TR : S3 operasyonu başarısız olursa mantıksal veri bütünlüğünü korumak adına
+     * ilgili DynamoDB kaydı silinmeli/geri alınmalı.
+     * -----------------------------------------------------------------------------
+     * -- EN : If S3 operation fails ensures the remaining DynamoDB record is rolled
+     * back for logical data consistency.
+     */
     private void rollBackFromDynamoDBTable(String uniqueFileId) {
         try {
 
             LOGGER.info("Rollback started for DynamoDB record.");
             HashMap<String, AttributeValue> keyToGet = new HashMap<String, AttributeValue>();
-            keyToGet.put("id", AttributeValue.builder()
-                    .s(uniqueFileId)
-                    .build());
-            DeleteItemRequest deleteReq = DeleteItemRequest.builder()
-                    .tableName(tableName)
-                    .key(keyToGet)
-                    .build();
+            keyToGet.put("id", AttributeValue.builder().s(uniqueFileId).build());
+            DeleteItemRequest deleteReq = DeleteItemRequest.builder().tableName(tableName).key(keyToGet).build();
             dynamoDbClient.deleteItem(deleteReq);
             LOGGER.info("Rollback is succeeded.");
         } catch (Exception ex) {

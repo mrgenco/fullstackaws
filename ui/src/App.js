@@ -7,6 +7,7 @@ function App() {
   const [images, setImages] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [term, setTerm] = useState("all");
+  const [isUploaded, setIsUploaded] = useState(false);
   useEffect(() => {
     fetch(`http://localhost:8080/image/search/` + term)
       .then((res) => res.json())
@@ -14,15 +15,15 @@ function App() {
         console.log(data);
         setImages(data);
         setIsLoading(false);
+        setIsUploaded(false);
       })
       .catch((err) => console.log(err));
-  }, [term]);
+  }, [term, isUploaded]);
 
   return (
     <div className="container mx-auto">
       <ImageSearch searchText={(text) => setTerm(text)} />
-
-      <ImageUpload></ImageUpload>
+      <ImageUpload isUploaded={(isUploaded) => setIsUploaded(isUploaded)} />
       {!isLoading && images.length === 0 && (
         <h1 className="text-5xl text-center mx-auto mt-32">No Images Found</h1>
       )}
