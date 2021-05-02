@@ -1,7 +1,9 @@
-### This is a simple Full-Stack Image Gallery application built with React & SpringBoot
-### AWS Java SDK 2.0 is used for DynamoDB & S3 interactions.
+###### This is an example Full-Stack Image Gallery application built with React & SpringBoot
+###### AWS Java SDK 2.0 is used for DynamoDB & S3 interactions.
 
-[Live Demo on Youtube](https://www.youtube.com/watch?v=r1vqXTx0Q5I)
+Basic Requirements: NodeJS, JRE 1.8+, AWS Account
+
+[Live Demo on Youtube](https://www.youtube.com/watch?v=Sm_7TgMi9PY)
 
 ![Preview of Demo](https://raw.githubusercontent.com/mrgenco/fullstackaws/main/api/src/main/resources/ImageGallery.JPG)
 
@@ -40,8 +42,34 @@ public List<Image> searchImage(@PathVariable("searchTerm") String searchTerm) {
 }
 ```
 
-The Image class here represents our domain object as well as DynamoDB table on AWS.
+Below example in AWSServiceImpl.java class shows DynamoDbEnhancedClient usage which is a new module of the AWS SDK for Java 2.0
+Read [this blog post](https://aws.amazon.com/blogs/developer/introducing-enhanced-dynamodb-client-in-the-aws-sdk-for-java-v2/) for details
+
+
+```java
+@Override
+public List<Image> findBySearchTerm(String searchTerm) {
+        try {            
+            List<Image> imageList = new ArrayList<>();
+            DynamoDbEnhancedClient enhancedClient = DynamoDbEnhancedClient.builder().dynamoDbClient(dynamoDbClient).build();
+            DynamoDbTable<Image> imageTable = enhancedClient.table(tableName, TableSchema.fromBean(Image.class));
+            AttributeValue attr = AttributeValue.builder().s(searchTerm).build();
+            Map<String, AttributeValue> myMap = new HashMap<>();
+            myMap.put(":tag", attr);
+            Expression expression = Expression.builder().expressionValues(myMap).expression("contains(Tags, :tag)").build();
+            ScanEnhancedRequest enhancedRequest = ScanEnhancedRequest.builder().filterExpression(expression).build();
+            imageTable.scan(enhancedRequest).items().forEach(imageList::add);
+            return imageList;
+        } catch (DynamoDbException e) {
+            LOGGER.error("Error= {} while searching DynamoDB.", e.getMessage());
+            throw e;
+        }
+}
+
+```
+
 The AWS SDK for Java provides a DynamoDBMapper class, allowing you to map your client-side classes to Amazon DynamoDB tables.
+The Image class below represents our domain object as well as DynamoDB table on AWS.
 
 ```java
 @DynamoDbBean
