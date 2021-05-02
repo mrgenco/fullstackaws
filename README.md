@@ -1,9 +1,8 @@
-<p> This is an example Full-Stack Image Gallery application built with React & SpringBoot</p>
-<p> AWS Java SDK 2.0 is used for DynamoDB & S3 interactions.</p>
+#### This is an example Full-Stack Image Gallery application built with React & SpringBoot</p>
+#### AWS Java SDK 2.0 is used for DynamoDB & S3 interactions.</p>
+#### Basic Requirements: NodeJS, JRE 1.8+, AWS Account</p>
 
-<p>Basic Requirements: NodeJS, JRE 1.8+, AWS Account</p>
-
-<p>Some background information :</p>
+#### Some background information :</p>
 
 - The images are stored in an AWS S3 bucket (Create a free-tier AWS account if you don’t already have one)
 - The information of the images (description, file type, size, tags, create date besides a primary key) is stored in AWS DynamoDB.
@@ -45,8 +44,8 @@ public List<Image> searchImage(@PathVariable("searchTerm") String searchTerm) {
 }
 ```
 
-Below example in AWSServiceImpl.java class shows DynamoDbEnhancedClient usage which is a new module of the AWS SDK for Java 2.0
-Read [this blog post](https://aws.amazon.com/blogs/developer/introducing-enhanced-dynamodb-client-in-the-aws-sdk-for-java-v2/) for details
+<p>Below example in AWSServiceImpl.java class illustrates DynamoDbEnhancedClient usage which is a new module of the AWS SDK for Java 2.0 </p>
+<p>Read [this blog post](https://aws.amazon.com/blogs/developer/introducing-enhanced-dynamodb-client-in-the-aws-sdk-for-java-v2/) for details</p>
 
 
 ```java
