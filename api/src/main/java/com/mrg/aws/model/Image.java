@@ -1,6 +1,5 @@
 package com.mrg.aws.model;
 
-
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbAttribute;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbPartitionKey;
@@ -14,6 +13,7 @@ public class Image {
     private String fileSize;
     private String fileType;
     private String tags;
+    private String createDate;
 
     @DynamoDbPartitionKey
     @DynamoDbAttribute(value = "ImageId")
@@ -70,15 +70,19 @@ public class Image {
         this.tags = tags;
     }
 
+    @DynamoDbAttribute(value = "CreateDate")
+    public String getCreateDate() {
+        return createDate;
+    }
+
+    public void setCreateDate(String createDate) {
+        this.createDate = createDate;
+    }
+
     @Override
     public String toString() {
-        return "Image{" +
-                "imageId='" + imageId + '\'' +
-                ", fileName='" + fileName + '\'' +
-                ", fileDesc='" + fileDesc + '\'' +
-                ", fileSize='" + fileSize + '\'' +
-                ", fileType='" + fileType + '\'' +
-                ", tags='" + tags + '\'' +
-                '}';
+        return "Image{" + "imageId='" + imageId + '\'' + ", fileName='" + fileName + '\'' + ", fileDesc='" + fileDesc
+                + '\'' + ", fileSize='" + fileSize + '\'' + ", fileType='" + fileType + '\'' + ", tags='" + tags + '\''
+                + '}';
     }
 }

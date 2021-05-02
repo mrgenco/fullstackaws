@@ -15,15 +15,21 @@ const ImageCard = ({ image }) => {
         <ul>
           <li>
             <strong>Size: </strong>
-            {image.fileSize}
+            {image.fileSize}KB
           </li>
           <li>
             <strong>Description: </strong>
             {image.fileDesc}
           </li>
+
+          <li>
+            <strong>Created Date: </strong>
+            {image.createDate}
+          </li>
         </ul>
       </div>
-      <div className="px-6 py-4">
+      <div className="px-6 py-2">
+        <strong>Tags: </strong>
         {tags.map((tag, index) => (
           <span
             key={index}

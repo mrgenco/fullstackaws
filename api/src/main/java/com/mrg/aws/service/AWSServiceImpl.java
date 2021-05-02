@@ -6,14 +6,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.core.sync.ResponseTransformer;
 import software.amazon.awssdk.enhanced.dynamodb.*;
-import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 import software.amazon.awssdk.enhanced.dynamodb.model.ScanEnhancedRequest;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.*;
@@ -23,6 +21,10 @@ import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import java.io.File;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 @Service
@@ -47,32 +49,22 @@ public class AWSServiceImpl implements AWSService {
     }
 
     @Override
-    public List<Image> findAll() {
-        List<Image> imageList = new ArrayList<>();
-        try {
-            // Create a DynamoDbTable object
-            DynamoDbTable<Image> imageTable = enhancedClient.table(tableName, TableSchema.fromBean(Image.class));
-            imageTable.scan().items().forEach(imageList::add);
-            return imageList;
-
-        } catch (DynamoDbException e) {
-            LOGGER.error("Error= {} while searching DynamoDB.", e.getMessage());
-            throw e;
-        }
-    }
-
-    @Override
     public List<Image> findBySearchTerm(String searchTerm) {
         List<Image> imageList = new ArrayList<>();
+        DynamoDbTable<Image> imageTable = enhancedClient.table(tableName, TableSchema.fromBean(Image.class));
         try {
-            DynamoDbTable<Image> imageTable = enhancedClient.table(tableName, TableSchema.fromBean(Image.class));
-            AttributeValue attr = AttributeValue.builder().s(searchTerm).build();
-            Map<String, AttributeValue> myMap = new HashMap<>();
-            myMap.put(":tag", attr);
-            Expression expression = Expression.builder().expressionValues(myMap).expression("contains(Tags, :tag)")
-                    .build();
-            ScanEnhancedRequest enhancedRequest = ScanEnhancedRequest.builder().filterExpression(expression).build();
-            imageTable.scan(enhancedRequest).items().forEach(imageList::add);
+            if (searchTerm.equals("all")) {
+                imageTable.scan().items().forEach(imageList::add);
+            } else {
+                AttributeValue attr = AttributeValue.builder().s(searchTerm).build();
+                Map<String, AttributeValue> myMap = new HashMap<>();
+                myMap.put(":tag", attr);
+                Expression expression = Expression.builder().expressionValues(myMap).expression("contains(Tags, :tag)")
+                        .build();
+                ScanEnhancedRequest enhancedRequest = ScanEnhancedRequest.builder().filterExpression(expression)
+                        .build();
+                imageTable.scan(enhancedRequest).items().forEach(imageList::add);
+            }
             return imageList;
 
         } catch (DynamoDbException e) {
@@ -115,20 +107,31 @@ public class AWSServiceImpl implements AWSService {
         try {
             LOGGER.info("Adding DynamoDB record with name= " + uniqueId);
             DynamoDbTable<Image> imageTable = enhancedClient.table(tableName, TableSchema.fromBean(Image.class));
-            Image image = new Image();
-            image.setImageId(uniqueId);
-            image.setFileName(multipartFile.getOriginalFilename());
-            image.setFileDesc(description);
-            image.setFileType(multipartFile.getContentType());
-            image.setFileSize(String.valueOf(multipartFile.getSize()));
-            image.setTags(tags);
-            // Put the customer data into a DynamoDB table
+            Image image = prepareImageData(uniqueId, multipartFile, description, tags);
             imageTable.putItem(image);
             LOGGER.info("File upload DynamoDB is completed.");
         } catch (DynamoDbException ex) {
             LOGGER.error("Error= {} while adding new file to DynamoDB.", ex.getMessage());
             throw ex;
         }
+    }
+
+    // Preparing enhanced DynamoDB mapper client
+    private Image prepareImageData(String uniqueId, MultipartFile multipartFile, String description, String tags) {
+        Image image = new Image();
+        image.setImageId(uniqueId);
+        image.setFileName(multipartFile.getOriginalFilename());
+        image.setFileDesc(description);
+        image.setFileType(multipartFile.getContentType());
+        image.setTags(tags);
+        // Convert bytes to kilobytes
+        long fileSizeInKB = multipartFile.getSize() / 1024;
+        image.setFileSize(String.valueOf(fileSizeInKB));
+        // Setup create date and time
+        DateTimeFormatter formatter = DateTimeFormatter.BASIC_ISO_DATE;
+        String formattedDate = formatter.format(LocalDate.now());
+        image.setCreateDate(formattedDate);
+        return image;
     }
 
     private void uploadFileToS3Bucket(final String uniqueFileId, final MultipartFile multipartFile) throws Exception {
@@ -154,7 +157,7 @@ public class AWSServiceImpl implements AWSService {
      * TR : S3 operasyonu başarısız olursa mantıksal veri bütünlüğünü korumak adına
      * ilgili DynamoDB kaydı silinmeli/geri alınmalı.
      * -----------------------------------------------------------------------------
-     * -- EN : If S3 operation fails ensures the remaining DynamoDB record is rolled
+     * EN : If S3 operation fails, ensure the remaining DynamoDB record is rolled
      * back for logical data consistency.
      */
     private void rollBackFromDynamoDBTable(String uniqueFileId) {

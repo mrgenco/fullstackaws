@@ -25,8 +25,8 @@ public class ImageOperationsController {
 
     @PostMapping(value = "/upload")
     public ResponseEntity<String> uploadImage(@RequestPart(value = "image") final MultipartFile multipartFile,
-                                              @RequestPart(value = "description") final String description,
-                                              @RequestPart(value = "tags") final String tags) {
+            @RequestPart(value = "description") final String description,
+            @RequestPart(value = "tags") final String tags) {
         try {
             service.uploadImage(multipartFile, description, tags);
             final String response = "[" + multipartFile.getOriginalFilename() + "] uploaded successfully.";
@@ -41,13 +41,9 @@ public class ImageOperationsController {
         return service.downloadImage(imageId);
     }
 
-
     @GetMapping(value = "/search/{searchTerm}")
     public List<Image> searchImage(@PathVariable("searchTerm") String searchTerm) {
-        if (searchTerm.equals("all"))
-            return service.findAll();
-        else
-            return service.findBySearchTerm(searchTerm);
+        return service.findBySearchTerm(searchTerm);
     }
 
 }

@@ -8,7 +8,8 @@ import java.util.UUID;
 
 public interface AWSService {
 	void uploadImage(MultipartFile multipartFile, String description, String tags) throws Exception;
+
 	byte[] downloadImage(UUID imageId);
-	List<Image> findAll();
+
 	List<Image> findBySearchTerm(String searchTerm);
 }
