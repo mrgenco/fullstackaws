@@ -1,17 +1,23 @@
-## This is a demo of the Image Gallery application I created using React, SpringBoot. 
-## AWS Java SDK 2.0 is used in the backend for DynamoDB & S3 interactions.
+### This is a Full-Stack Image Gallery application built with React & SpringBoot
+### AWS Java SDK 2.0 is used for DynamoDB & S3 interactions.
+
+[Live Demo on Youtube](https://www.youtube.com/watch?v=r1vqXTx0Q5I)
 
 ![Preview of Demo](https://raw.githubusercontent.com/mrgenco/fullstackaws/main/api/src/main/resources/ImageGallery.JPG)
+
 
 - The images are stored in an AWS S3 bucket (Create a free-tier AWS account if you don’t already have one)
 - The information of the images (description, file type, size, tags, create date besides a primary key) is stored in AWS DynamoDB.
 - If DB or S3 operation fails, we are ensuring the remaining record is removed/rolled back.
 
 
+### Upload, Download and Search Endpoints
+
 ```java
 
 @PostMapping(value = "/upload")
-public ResponseEntity<String> uploadImage(@RequestPart(value = "image") final MultipartFile multipartFile,
+public ResponseEntity<String> uploadImage(
+        @RequestPart(value = "image") final MultipartFile multipartFile,
         @RequestPart(value = "description") final String description,
         @RequestPart(value = "tags") final String tags) {
     try {
@@ -111,13 +117,6 @@ public class Image {
 
     public void setCreateDate(String createDate) {
         this.createDate = createDate;
-    }
-
-    @Override
-    public String toString() {
-        return "Image{" + "imageId='" + imageId + '\'' + ", fileName='" + fileName + '\'' + ", fileDesc='" + fileDesc
-                + '\'' + ", fileSize='" + fileSize + '\'' + ", fileType='" + fileType + '\'' + ", tags='" + tags + '\''
-                + '}';
     }
 }
 ```
