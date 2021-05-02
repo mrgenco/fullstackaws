@@ -1,4 +1,4 @@
-### This is a Full-Stack Image Gallery application built with React & SpringBoot
+### This is a simple Full-Stack Image Gallery application built with React & SpringBoot
 ### AWS Java SDK 2.0 is used for DynamoDB & S3 interactions.
 
 [Live Demo on Youtube](https://www.youtube.com/watch?v=r1vqXTx0Q5I)
